@@ -9,12 +9,12 @@ To implement the message queue system using GitHub Gists, the work can be organi
 - **1.2. Environment Configuration** ✅
   - Set up the development environment with access to the GitHub REST API, ensuring all required libraries and tools are available.
 
-**2. Gist Management**
+**2. Gist Management** ✅
 
-- **2.1. Gist Creation**
+- **2.1. Gist Creation** ✅
   - Develop functionality to create a new Gist with a specific description (e.g., "Queue: Orders") and an appropriately named file (e.g., `orders_queue.json`) to represent the message queue.
 
-- **2.2. Gist Retrieval**
+- **2.2. Gist Retrieval** ✅
   - Implement methods to retrieve existing Gists by description or ID to access the corresponding message queues.
 
 **3. Message Operations**
