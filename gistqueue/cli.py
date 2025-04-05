@@ -9,6 +9,14 @@ import json
 from tabulate import tabulate
 from gistqueue.main import check_environment, initialize_client
 from gistqueue.queue import QueueManager
+from gistqueue.message import MessageManager, MessageStatus
+from gistqueue.cli_message_handlers import (
+    handle_create_message,
+    handle_list_messages,
+    handle_get_next_message,
+    handle_update_message,
+    handle_delete_completed_messages
+)
 
 def create_parser():
     """
@@ -73,6 +81,75 @@ def create_parser():
     get_queue_parser.add_argument(
         "--format", choices=["table", "json"], default="table",
         help="Output format (default: table)"
+    )
+
+    # 'create-message' command
+    create_message_parser = subparsers.add_parser(
+        "create-message", help="Create a new message in a queue"
+    )
+    create_message_parser.add_argument(
+        "queue", help="Name or ID of the queue"
+    )
+    create_message_parser.add_argument(
+        "content", help="Content of the message"
+    )
+
+    # 'list-messages' command
+    list_messages_parser = subparsers.add_parser(
+        "list-messages", help="List messages in a queue"
+    )
+    list_messages_parser.add_argument(
+        "queue", help="Name or ID of the queue"
+    )
+    list_messages_parser.add_argument(
+        "--status", choices=["pending", "in_progress", "complete", "failed"],
+        help="Filter messages by status"
+    )
+    list_messages_parser.add_argument(
+        "--format", choices=["table", "json"], default="table",
+        help="Output format (default: table)"
+    )
+
+    # 'get-next-message' command
+    get_next_message_parser = subparsers.add_parser(
+        "get-next-message", help="Get the next pending message from a queue and mark it as in progress"
+    )
+    get_next_message_parser.add_argument(
+        "queue", help="Name or ID of the queue"
+    )
+    get_next_message_parser.add_argument(
+        "--format", choices=["table", "json"], default="table",
+        help="Output format (default: table)"
+    )
+
+    # 'update-message' command
+    update_message_parser = subparsers.add_parser(
+        "update-message", help="Update a message in a queue"
+    )
+    update_message_parser.add_argument(
+        "queue", help="Name or ID of the queue"
+    )
+    update_message_parser.add_argument(
+        "message_id", help="ID of the message to update"
+    )
+    update_message_parser.add_argument(
+        "--content", help="New content of the message"
+    )
+    update_message_parser.add_argument(
+        "--status", choices=["pending", "in_progress", "complete", "failed"],
+        help="New status of the message"
+    )
+    update_message_parser.add_argument(
+        "--format", choices=["table", "json"], default="table",
+        help="Output format (default: table)"
+    )
+
+    # 'delete-completed-messages' command
+    delete_completed_messages_parser = subparsers.add_parser(
+        "delete-completed-messages", help="Delete completed messages that are older than the cleanup threshold"
+    )
+    delete_completed_messages_parser.add_argument(
+        "queue", help="Name or ID of the queue"
     )
 
     return parser
@@ -234,6 +311,16 @@ def main():
         return handle_list_queues(args)
     elif args.command == "get-queue":
         return handle_get_queue(args)
+    elif args.command == "create-message":
+        return handle_create_message(args)
+    elif args.command == "list-messages":
+        return handle_list_messages(args)
+    elif args.command == "get-next-message":
+        return handle_get_next_message(args)
+    elif args.command == "update-message":
+        return handle_update_message(args)
+    elif args.command == "delete-completed-messages":
+        return handle_delete_completed_messages(args)
     elif not args.command:
         parser.print_help()
         return 0

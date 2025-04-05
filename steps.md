@@ -17,21 +17,21 @@ To implement the message queue system using GitHub Gists, the work can be organi
 - **2.2. Gist Retrieval** ✅
   - Implement methods to retrieve existing Gists by description or ID to access the corresponding message queues.
 
-**3. Message Operations**
+**3. Message Operations** ✅
 
-- **3.1. Create Message**
+- **3.1. Create Message** ✅
   - Develop functionality to append a new message with the required fields (`id`, `content`, `status`, `status_datetime`) to the queue file within the Gist.
 
-- **3.2. List Messages**
+- **3.2. List Messages** ✅
   - Implement functionality to retrieve and parse all messages from the queue file, with optional filtering based on the `status` field.
 
-- **3.3. Get-Next Message**
+- **3.3. Get-Next Message** ✅
   - Develop functionality to identify and retrieve the next message with a `pending` status, update its status to `in progress`, set the `status_datetime` to the current time, and record the identifier of the processing entity.
 
-- **3.4. Update Message**
+- **3.4. Update Message** ✅
   - Implement functionality to modify an existing message's `content`, `status`, and/or `status_datetime` as required.
 
-- **3.5. Delete Message**
+- **3.5. Delete Message** ✅
   - Develop functionality to remove messages marked as `complete` with a `status_datetime` older than one day from the queue file.
 
 **4. Concurrency and Conflict Handling**
