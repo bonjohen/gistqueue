@@ -5,6 +5,7 @@ This module provides the main entry point for the GistQueue application,
 which implements a message queue system using GitHub Gists.
 """
 import sys
+import logging
 from gistqueue.auth import get_github_client, validate_token, get_github_token
 from gistqueue.config import CONFIG
 from gistqueue.github_client import GistClient
@@ -12,6 +13,7 @@ from gistqueue.queue import QueueManager
 from gistqueue.message import MessageManager
 from gistqueue.concurrency import ConcurrencyManager
 from gistqueue.garbage_collection import GarbageCollector
+from gistqueue.logging_config import logger
 
 def check_environment():
     """
@@ -24,13 +26,13 @@ def check_environment():
         # Check for GitHub token
         token = get_github_token()
         if not validate_token(token):
-            print("ERROR: Invalid GitHub token. Please check your GIST_TOKEN environment variable.", file=sys.stderr)
+            logger.error("Invalid GitHub token. Please check your GIST_TOKEN environment variable.")
             return False
 
-        print("Environment check passed. GitHub authentication successful.")
+        logger.info("Environment check passed. GitHub authentication successful.")
         return True
     except ValueError as e:
-        print(f"ERROR: {e}", file=sys.stderr)
+        logger.error(f"{e}")
         return False
 
 def initialize_client():
@@ -43,7 +45,7 @@ def initialize_client():
     try:
         return GistClient()
     except RuntimeError as e:
-        print(f"ERROR: {e}", file=sys.stderr)
+        logger.error(f"{e}")
         return None
 
 def initialize_garbage_collector(client):
@@ -62,7 +64,7 @@ def initialize_garbage_collector(client):
         concurrency_manager = ConcurrencyManager(queue_manager, message_manager)
         return GarbageCollector(queue_manager, message_manager, concurrency_manager)
     except Exception as e:
-        print(f"ERROR: Failed to initialize garbage collector: {e}", file=sys.stderr)
+        logger.error(f"Failed to initialize garbage collector: {e}")
         return None
 
 def main():
@@ -72,7 +74,7 @@ def main():
     Returns:
         int: Exit code (0 for success, non-zero for failure).
     """
-    print("Initializing GistQueue...")
+    logger.info("Initializing GistQueue...")
 
     # Check environment configuration
     if not check_environment():
@@ -86,18 +88,18 @@ def main():
     # Initialize garbage collector
     garbage_collector = initialize_garbage_collector(client)
     if not garbage_collector:
-        print("WARNING: Garbage collector initialization failed. Automatic cleanup will not be available.", file=sys.stderr)
+        logger.warning("Garbage collector initialization failed. Automatic cleanup will not be available.")
     elif CONFIG.get('CLEANUP_AUTO_START', False):
-        print("Starting automatic garbage collection...")
+        logger.info("Starting automatic garbage collection...")
         if garbage_collector.start_cleanup_thread():
-            print(f"Garbage collection thread started. Cleanup interval: {CONFIG['CLEANUP_INTERVAL_SECONDS']} seconds")
+            logger.info(f"Garbage collection thread started. Cleanup interval: {CONFIG['CLEANUP_INTERVAL_SECONDS']} seconds")
         else:
-            print("WARNING: Failed to start garbage collection thread.", file=sys.stderr)
+            logger.warning("Failed to start garbage collection thread.")
 
-    print("GistQueue initialized successfully.")
+    logger.info("GistQueue initialized successfully.")
     # Log only non-sensitive configuration parameters
     non_sensitive_config = {key: value for key, value in CONFIG.items() if key not in ["sensitive_key1", "sensitive_key2"]}
-    print(f"Using configuration: {non_sensitive_config}")
+    logger.info(f"Using configuration: {non_sensitive_config}")
 
     return 0
 

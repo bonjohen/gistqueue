@@ -10,6 +10,7 @@ GistQueue is a Python library that implements a simple message queue system usin
 - Add, retrieve, update, and delete messages in the queues
 - Handle concurrent access with conflict detection and resolution
 - Automatically clean up processed messages
+- Comprehensive logging with configurable levels and outputs
 
 ## Requirements
 
@@ -59,11 +60,13 @@ GistQueue is a Python library that implements a simple message queue system usin
 
 ## Usage
 
+For detailed usage instructions, examples, and complete command reference, see the [USAGE.md](USAGE.md) document.
+
 ### Command Line Interface
 
 GistQueue provides a command-line interface for common operations:
 
-```
+```bash
 # Initialize and test your environment
 gistqueue init
 
@@ -95,6 +98,17 @@ queue_data = client.parse_json_content(content)
 ```
 
 ## Development
+
+### Logging
+
+GistQueue uses Python's standard logging module for all output. By default, logs are sent to stderr with timestamps and log levels. You can configure the logging behavior by modifying the `gistqueue/logging_config.py` file or by using Python's logging configuration in your application.
+
+Example log output:
+```
+2025-04-04 22:26:00,569 - gistqueue - INFO - Environment check passed. GitHub authentication successful.
+2025-04-04 22:26:02,730 - gistqueue - INFO - Queue 'test_queue_example' already exists.
+2025-04-04 22:26:05,546 - gistqueue - ERROR - Failed to retrieve queue content.
+```
 
 ### Running Tests
 

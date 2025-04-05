@@ -3,6 +3,7 @@ Tests for the main module.
 """
 import pytest
 import os
+import logging
 from unittest.mock import patch, MagicMock
 from gistqueue.main import main, check_environment, initialize_client
 
@@ -42,11 +43,11 @@ def test_main_with_client_error():
         with patch('gistqueue.main.initialize_client', return_value=None):
             assert main() == 1
 
-def test_main_success(capsys):
-    """Test that main returns 0 and prints the expected message when successful."""
+def test_main_success(caplog):
+    """Test that main returns 0 and logs the expected message when successful."""
+    caplog.set_level(logging.INFO)
     mock_client = MagicMock()
     with patch('gistqueue.main.check_environment', return_value=True):
         with patch('gistqueue.main.initialize_client', return_value=mock_client):
             assert main() == 0
-            captured = capsys.readouterr()
-            assert "GistQueue initialized successfully" in captured.out
+            assert "GistQueue initialized successfully" in caplog.text

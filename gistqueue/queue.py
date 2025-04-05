@@ -6,12 +6,14 @@ using GitHub Gists as the storage backend.
 """
 import json
 import time
+import logging
 from typing import Optional, List, Dict, Any, Union
 from gistqueue.direct_api import Gist, DirectGitHubClient
 
 from gistqueue.github_client import GistClient
 from gistqueue.config import CONFIG
 from gistqueue.auth import get_github_token
+from gistqueue.logging_config import logger
 
 class QueueManager:
     """
@@ -75,12 +77,12 @@ class QueueManager:
         # Check if the queue already exists
         existing_queue = self.get_queue(queue_name)
         if existing_queue:
-            print(f"Queue '{queue_name}' already exists.")
+            logger.info(f"Queue '{queue_name}' already exists.")
             return existing_queue
 
         # Create a new queue with an empty array
         try:
-            # First try with the PyGithub client
+            # Create the gist using the client
             gist = self.client.create_gist(
                 description=description,
                 filename=filename,
@@ -90,53 +92,14 @@ class QueueManager:
 
             # Verify that the gist was created successfully
             if hasattr(gist, 'html_url') and gist.html_url:
-                print(f"Queue '{queue_name}' created successfully.")
+                logger.info(f"Queue '{queue_name}' created successfully.")
                 return gist
             else:
-                print(f"Error creating queue '{queue_name}': Invalid response from GitHub API")
+                logger.error(f"Error creating queue '{queue_name}': Invalid response from GitHub API")
                 return None
         except Exception as e:
-            print(f"Error creating queue '{queue_name}' with PyGithub: {e}")
-            print("Trying with direct API as fallback...")
-
-            # Try with direct API as fallback
-            try:
-                # Get the token
-                token = get_github_token()
-                direct_client = DirectGitHubClient(token)
-
-                # Create the gist using the direct API
-                gist_data = direct_client.create_gist(
-                    description=description,
-                    filename=filename,
-                    content="[]",
-                    public=public
-                )
-
-                if gist_data and 'html_url' in gist_data:
-                    print(f"Queue '{queue_name}' created successfully using direct API.")
-                    # Wait a bit for the gist to be available via PyGithub
-                    time.sleep(1)
-                    # Try to get the gist via PyGithub to return a proper Gist object
-                    if 'id' in gist_data:
-                        gist = self.client.get_gist_by_id(gist_data['id'])
-                        if gist:
-                            return gist
-
-                    # If we can't get a proper Gist object, try to get it by description
-                    retry_gist = self.get_queue(queue_name)
-                    if retry_gist:
-                        return retry_gist
-
-                    print("Warning: Created gist with direct API but couldn't retrieve it with PyGithub.")
-                    print(f"Gist URL: {gist_data.get('html_url')}")
-                    return None
-                else:
-                    print(f"Error creating queue '{queue_name}' with direct API.")
-                    return None
-            except Exception as direct_e:
-                print(f"Error creating queue '{queue_name}' with direct API: {direct_e}")
-                return None
+            logger.error(f"Error creating queue '{queue_name}': {e}")
+            return None
 
     def get_queue(self, queue_name: Optional[str] = None) -> Optional[Gist]:
         """
@@ -154,7 +117,7 @@ class QueueManager:
         try:
             return self.client.get_gist_by_description(description)
         except Exception as e:
-            print(f"Error retrieving queue '{queue_name}': {e}")
+            logger.error(f"Error retrieving queue '{queue_name}': {e}")
             return None
 
     def get_queue_by_id(self, gist_id: str) -> Optional[Gist]:
@@ -170,7 +133,7 @@ class QueueManager:
         try:
             return self.client.get_gist_by_id(gist_id)
         except Exception as e:
-            print(f"Error retrieving queue with ID '{gist_id}': {e}")
+            logger.error(f"Error retrieving queue with ID '{gist_id}': {e}")
             return None
 
     def list_queues(self) -> List[Dict[str, str]]:
@@ -233,20 +196,20 @@ class QueueManager:
             filename = self._get_queue_filename(queue_name)
 
         if not gist:
-            print("Queue not found.")
+            logger.warning("Queue not found.")
             return None
 
         if not filename or filename not in gist.files:
-            print(f"Queue file not found in Gist.")
+            logger.warning(f"Queue file not found in Gist.")
             return None
 
         content = self.client.get_gist_content(gist, filename)
         if not content:
-            print("Failed to retrieve queue content.")
+            logger.error("Failed to retrieve queue content.")
             return None
 
         try:
             return json.loads(content)
         except json.JSONDecodeError:
-            print("Failed to parse queue content as JSON.")
+            logger.error("Failed to parse queue content as JSON.")
             return None

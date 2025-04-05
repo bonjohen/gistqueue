@@ -5,9 +5,11 @@ This module handles GitHub authentication and token management.
 """
 import os
 import sys
+import logging
 from typing import Optional
 from dotenv import load_dotenv
 from gistqueue.direct_api import DirectGitHubClient, GithubException
+from gistqueue.logging_config import logger
 
 # Load environment variables from .env file if it exists
 load_dotenv()
@@ -49,7 +51,7 @@ def validate_token(token: str) -> bool:
         # If we get here, the token is valid
         return True
     except GithubException as e:
-        print(f"Error validating GitHub token: {e}", file=sys.stderr)
+        logger.error(f"Error validating GitHub token: {e}")
         return False
 
 def get_github_client() -> Optional[DirectGitHubClient]:
@@ -66,5 +68,5 @@ def get_github_client() -> Optional[DirectGitHubClient]:
             return DirectGitHubClient(token)
         return None
     except ValueError as e:
-        print(f"Authentication error: {e}", file=sys.stderr)
+        logger.error(f"Authentication error: {e}")
         return None

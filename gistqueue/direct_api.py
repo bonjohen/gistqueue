@@ -8,7 +8,9 @@ import requests
 import json
 import time
 import datetime
+import logging
 from typing import Optional, Dict, Any, List, Union, Callable, TypeVar
+from gistqueue.logging_config import logger
 
 # Type variable for generic functions
 T = TypeVar('T')
@@ -216,7 +218,7 @@ class DirectGitHubClient:
         existing_gists = self.get_gists()
         for gist in existing_gists:
             if gist.description == description:
-                print(f"Found existing gist with description: {description}")
+                logger.info(f"Found existing gist with description: {description}")
                 return gist
 
         # If no existing gist is found, create a new one

@@ -10,11 +10,13 @@ import time
 import datetime
 import socket
 import os
+import logging
 from typing import Optional, List, Dict, Any, Union
 from gistqueue.direct_api import Gist
 
 from gistqueue.queue import QueueManager
 from gistqueue.config import CONFIG
+from gistqueue.logging_config import logger
 
 class MessageStatus:
     """Message status constants."""
@@ -97,13 +99,13 @@ class MessageManager:
             gist = queue
 
         if not gist:
-            print("Queue not found.")
+            logger.warning("Queue not found.")
             return None
 
         # Get the queue content
         queue_content = self.queue_manager.get_queue_content(gist, queue_name)
         if queue_content is None:
-            print("Failed to retrieve queue content.")
+            logger.error("Failed to retrieve queue content.")
             return None
 
         # Create the message
@@ -122,10 +124,10 @@ class MessageManager:
         filename = self.queue_manager._get_queue_filename(queue_name or self.queue_manager.default_queue)
         try:
             self.queue_manager.client.update_gist(gist, filename, json.dumps(queue_content, indent=2))
-            print(f"Message created with ID: {message['id']}")
+            logger.info(f"Message created with ID: {message['id']}")
             return message
         except Exception as e:
-            print(f"Error creating message: {e}")
+            logger.error(f"Error creating message: {e}")
             return None
 
     def list_messages(self, queue: Union[str, Gist], status: Optional[str] = None, queue_name: Optional[str] = None) -> Optional[List[Dict[str, Any]]]:
@@ -143,7 +145,7 @@ class MessageManager:
         # Get the queue content
         queue_content = self.queue_manager.get_queue_content(queue, queue_name)
         if queue_content is None:
-            print("Failed to retrieve queue content.")
+            logger.error("Failed to retrieve queue content.")
             return None
 
         # Filter by status if specified
@@ -178,13 +180,13 @@ class MessageManager:
             gist = queue
 
         if not gist:
-            print("Queue not found.")
+            logger.warning("Queue not found.")
             return None
 
         # Get the queue content
         queue_content = self.queue_manager.get_queue_content(gist, queue_name)
         if queue_content is None:
-            print("Failed to retrieve queue content.")
+            logger.error("Failed to retrieve queue content.")
             return None
 
         # Find the first pending message
@@ -199,13 +201,13 @@ class MessageManager:
                 filename = self.queue_manager._get_queue_filename(queue_name or self.queue_manager.default_queue)
                 try:
                     self.queue_manager.client.update_gist(gist, filename, json.dumps(queue_content, indent=2))
-                    print(f"Message {message['id']} marked as in progress.")
+                    logger.info(f"Message {message['id']} marked as in progress.")
                     return message
                 except Exception as e:
-                    print(f"Error updating message status: {e}")
+                    logger.error(f"Error updating message status: {e}")
                     return None
 
-        print("No pending messages found.")
+        logger.info("No pending messages found.")
         return None
 
     def update_message(self, queue: Union[str, Gist], message_id: str, content: Optional[Any] = None,
@@ -238,13 +240,13 @@ class MessageManager:
             gist = queue
 
         if not gist:
-            print("Queue not found.")
+            logger.warning("Queue not found.")
             return None
 
         # Get the queue content
         queue_content = self.queue_manager.get_queue_content(gist, queue_name)
         if queue_content is None:
-            print("Failed to retrieve queue content.")
+            logger.error("Failed to retrieve queue content.")
             return None
 
         # Find the message
@@ -262,13 +264,13 @@ class MessageManager:
                 filename = self.queue_manager._get_queue_filename(queue_name or self.queue_manager.default_queue)
                 try:
                     self.queue_manager.client.update_gist(gist, filename, json.dumps(queue_content, indent=2))
-                    print(f"Message {message_id} updated.")
+                    logger.info(f"Message {message_id} updated.")
                     return message
                 except Exception as e:
-                    print(f"Error updating message: {e}")
+                    logger.error(f"Error updating message: {e}")
                     return None
 
-        print(f"Message {message_id} not found.")
+        logger.warning(f"Message {message_id} not found.")
         return None
 
     def delete_completed_messages(self, queue: Union[str, Gist], queue_name: Optional[str] = None) -> Optional[int]:
@@ -297,7 +299,7 @@ class MessageManager:
             gist = queue
 
         if not gist:
-            print("Queue not found.")
+            logger.warning("Queue not found.")
             return None
 
         # Get the queue content
@@ -326,11 +328,11 @@ class MessageManager:
             filename = self.queue_manager._get_queue_filename(queue_name or self.queue_manager.default_queue)
             try:
                 self.queue_manager.client.update_gist(gist, filename, json.dumps(queue_content, indent=2))
-                print(f"Deleted {deleted_count} completed messages.")
+                logger.info(f"Deleted {deleted_count} completed messages.")
                 return deleted_count
             except Exception as e:
-                print(f"Error deleting messages: {e}")
+                logger.error(f"Error deleting messages: {e}")
                 return None
 
-        print("No messages to delete.")
+        logger.info("No messages to delete.")
         return 0
