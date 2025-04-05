@@ -8,6 +8,10 @@ import sys
 from gistqueue.auth import get_github_client, validate_token, get_github_token
 from gistqueue.config import CONFIG
 from gistqueue.github_client import GistClient
+from gistqueue.queue import QueueManager
+from gistqueue.message import MessageManager
+from gistqueue.concurrency import ConcurrencyManager
+from gistqueue.garbage_collection import GarbageCollector
 
 def check_environment():
     """
@@ -42,6 +46,25 @@ def initialize_client():
         print(f"ERROR: {e}", file=sys.stderr)
         return None
 
+def initialize_garbage_collector(client):
+    """
+    Initialize the garbage collector.
+
+    Args:
+        client (GistClient): An initialized GistClient instance.
+
+    Returns:
+        GarbageCollector: An initialized GarbageCollector instance, or None if initialization fails.
+    """
+    try:
+        queue_manager = QueueManager(client)
+        message_manager = MessageManager(queue_manager)
+        concurrency_manager = ConcurrencyManager(queue_manager, message_manager)
+        return GarbageCollector(queue_manager, message_manager, concurrency_manager)
+    except Exception as e:
+        print(f"ERROR: Failed to initialize garbage collector: {e}", file=sys.stderr)
+        return None
+
 def main():
     """
     Main entry point for the application.
@@ -59,6 +82,17 @@ def main():
     client = initialize_client()
     if not client:
         return 1
+
+    # Initialize garbage collector
+    garbage_collector = initialize_garbage_collector(client)
+    if not garbage_collector:
+        print("WARNING: Garbage collector initialization failed. Automatic cleanup will not be available.", file=sys.stderr)
+    elif CONFIG.get('CLEANUP_AUTO_START', False):
+        print("Starting automatic garbage collection...")
+        if garbage_collector.start_cleanup_thread():
+            print(f"Garbage collection thread started. Cleanup interval: {CONFIG['CLEANUP_INTERVAL_SECONDS']} seconds")
+        else:
+            print("WARNING: Failed to start garbage collection thread.", file=sys.stderr)
 
     print("GistQueue initialized successfully.")
     # Log only non-sensitive configuration parameters

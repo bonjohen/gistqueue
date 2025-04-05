@@ -23,6 +23,8 @@ DEFAULT_CONFIG = {
 
     # Cleanup settings
     'CLEANUP_THRESHOLD_DAYS': 1,  # days
+    'CLEANUP_INTERVAL_SECONDS': 3600,  # seconds (1 hour)
+    'CLEANUP_AUTO_START': False,  # Whether to automatically start the cleanup thread
 
     # Concurrency settings
     'CONCURRENCY_MAX_RETRIES': 3,

@@ -7,15 +7,22 @@ import argparse
 import sys
 import json
 from tabulate import tabulate
-from gistqueue.main import check_environment, initialize_client
+from gistqueue.main import check_environment, initialize_client, initialize_garbage_collector
 from gistqueue.queue import QueueManager
 from gistqueue.message import MessageManager, MessageStatus
+from gistqueue.concurrency import ConcurrencyManager
+from gistqueue.garbage_collection import GarbageCollector
 from gistqueue.cli_message_handlers import (
     handle_create_message,
     handle_list_messages,
     handle_get_next_message,
     handle_update_message,
     handle_delete_completed_messages
+)
+from gistqueue.cli_garbage_collection_handlers import (
+    handle_cleanup_all_queues,
+    handle_start_cleanup_thread,
+    handle_stop_cleanup_thread
 )
 
 def create_parser():
@@ -150,6 +157,29 @@ def create_parser():
     )
     delete_completed_messages_parser.add_argument(
         "queue", help="Name or ID of the queue"
+    )
+
+    # 'cleanup-all-queues' command
+    cleanup_all_queues_parser = subparsers.add_parser(
+        "cleanup-all-queues", help="Clean up completed messages in all queues"
+    )
+    cleanup_all_queues_parser.add_argument(
+        "--format", choices=["table", "json"], default="table",
+        help="Output format (default: table)"
+    )
+
+    # 'start-cleanup-thread' command
+    start_cleanup_thread_parser = subparsers.add_parser(
+        "start-cleanup-thread", help="Start the automatic cleanup thread"
+    )
+
+    # 'stop-cleanup-thread' command
+    stop_cleanup_thread_parser = subparsers.add_parser(
+        "stop-cleanup-thread", help="Stop the automatic cleanup thread"
+    )
+    stop_cleanup_thread_parser.add_argument(
+        "--timeout", type=float, default=5.0,
+        help="Maximum time to wait for the thread to stop, in seconds (default: 5.0)"
     )
 
     return parser
@@ -321,6 +351,12 @@ def main():
         return handle_update_message(args)
     elif args.command == "delete-completed-messages":
         return handle_delete_completed_messages(args)
+    elif args.command == "cleanup-all-queues":
+        return handle_cleanup_all_queues(args)
+    elif args.command == "start-cleanup-thread":
+        return handle_start_cleanup_thread(args)
+    elif args.command == "stop-cleanup-thread":
+        return handle_stop_cleanup_thread(args)
     elif not args.command:
         parser.print_help()
         return 0
