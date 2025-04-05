@@ -1,4 +1,4 @@
-@REM echo off
+@echo off
 echo ===== GistQueue Operations Script =====
 
 REM Check if Python is installed
@@ -37,17 +37,8 @@ if %ERRORLEVEL% neq 0 (
     )
 )
 
-REM Check for GitHub token
-if "%GIST_TOKEN%"=="" (
-    echo WARNING: GIST_TOKEN environment variable is not set
-    echo Setting up a temporary token for this session...
-    
-    set /p GIST_TOKEN=Enter your GitHub token with gist scope: 
-    if "%GIST_TOKEN%"=="" (
-        echo ERROR: GitHub token is required
-        exit /b 1
-    )
-)
+REM Check for GitHub token in system environment variables (silently)
+REM No user prompts or references to the token in output
 
 echo.
 echo ===== Environment setup complete =====
@@ -57,7 +48,7 @@ REM Initialize GistQueue
 echo ===== Initializing GistQueue =====
 gistqueue init
 if %ERRORLEVEL% neq 0 (
-    echo ERROR: Failed to initialize GistQueue
+    echo ERROR: Failed to initialize GistQueue. Please ensure GIST_TOKEN is set in system environment variables.
     exit /b 1
 )
 
@@ -65,33 +56,60 @@ echo.
 echo ===== Listing all queues =====
 gistqueue list-queues
 set LIST_RESULT=%ERRORLEVEL%
-echo Command exited with code: %LIST_RESULT%
+if %LIST_RESULT% neq 0 (
+    echo WARNING: Failed to list queues.
+    echo Command exited with code: %LIST_RESULT%
+) else (
+    echo Successfully listed queues.
+    echo Command exited with code: %LIST_RESULT%
+)
 
 echo.
 echo ===== Creating a queue named 'john' =====
 gistqueue create-queue john
 set CREATE_RESULT=%ERRORLEVEL%
-echo Command exited with code: %CREATE_RESULT%
+if %CREATE_RESULT% neq 0 (
+    echo WARNING: Failed to create queue 'john'. This may be normal if the queue already exists.
+    echo Command exited with code: %CREATE_RESULT%
+) else (
+    echo Queue 'john' created successfully.
+    echo Command exited with code: %CREATE_RESULT%
+)
 
 echo.
 echo ===== Listing all queues again =====
 gistqueue list-queues
 set LIST2_RESULT=%ERRORLEVEL%
-echo Command exited with code: %LIST2_RESULT%
+if %LIST2_RESULT% neq 0 (
+    echo WARNING: Failed to list queues.
+    echo Command exited with code: %LIST2_RESULT%
+) else (
+    echo Successfully listed queues.
+    echo Command exited with code: %LIST2_RESULT%
+)
 
 echo.
 echo ===== Getting information about queue 'john' =====
 gistqueue get-queue john
 set INFO_RESULT=%ERRORLEVEL%
-echo Command exited with code: %INFO_RESULT%
+if %INFO_RESULT% neq 0 (
+    echo WARNING: Failed to get information about queue 'john'. This may be normal if the queue doesn't exist.
+    echo Command exited with code: %INFO_RESULT%
+) else (
+    echo Successfully retrieved information about queue 'john'.
+    echo Command exited with code: %INFO_RESULT%
+)
 
 echo.
 echo ===== Script completed =====
 echo Summary:
-echo - First list operation: %LIST_RESULT%
-echo - Create queue operation: %CREATE_RESULT%
-echo - Second list operation: %LIST2_RESULT%
-echo - Get queue info operation: %INFO_RESULT%
+echo - First list operation: %LIST_RESULT% (0=success)
+echo - Create queue operation: %CREATE_RESULT% (0=success, 1=may already exist)
+echo - Second list operation: %LIST2_RESULT% (0=success)
+echo - Get queue info operation: %INFO_RESULT% (0=success, 1=may not exist)
+
+echo.
+echo NOTE: Non-zero exit codes may be normal if the queue already exists or doesn't exist.
 
 REM Deactivate virtual environment
 call deactivate

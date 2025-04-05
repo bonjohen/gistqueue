@@ -5,7 +5,7 @@ import pytest
 import json
 import hashlib
 from unittest.mock import patch, MagicMock, call
-from github import GithubException
+from gistqueue.direct_api import GithubException
 
 from gistqueue.concurrency import ConcurrencyManager, ConflictError
 from gistqueue.message import MessageStatus

@@ -9,8 +9,7 @@ import json
 import random
 import hashlib
 from typing import Optional, Dict, Any, Callable, TypeVar, List, Union
-from github.Gist import Gist
-from github import GithubException
+from gistqueue.direct_api import Gist, GithubException
 
 from gistqueue.queue import QueueManager
 from gistqueue.message import MessageManager, MessageStatus

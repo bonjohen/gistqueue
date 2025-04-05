@@ -5,7 +5,7 @@ import pytest
 import json
 import datetime
 from unittest.mock import patch, MagicMock
-from github.Gist import Gist
+from gistqueue.direct_api import Gist
 
 from gistqueue.message import MessageManager, MessageStatus
 

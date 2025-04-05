@@ -11,7 +11,7 @@ import datetime
 import socket
 import os
 from typing import Optional, List, Dict, Any, Union
-from github.Gist import Gist
+from gistqueue.direct_api import Gist
 
 from gistqueue.queue import QueueManager
 from gistqueue.config import CONFIG
@@ -27,58 +27,58 @@ class MessageManager:
     """
     Manager for messages in queues stored in GitHub Gists.
     """
-    
+
     def __init__(self, queue_manager: Optional[QueueManager] = None):
         """
         Initialize the MessageManager.
-        
+
         Args:
             queue_manager (Optional[QueueManager]): A QueueManager instance. If None, a new one will be created.
-            
+
         Raises:
             RuntimeError: If queue_manager initialization fails.
         """
         self.queue_manager = queue_manager or QueueManager()
         self.cleanup_threshold_days = CONFIG['CLEANUP_THRESHOLD_DAYS']
-    
+
     def _generate_message_id(self) -> str:
         """
         Generate a unique message ID.
-        
+
         Returns:
             str: A unique message ID.
         """
         return str(uuid.uuid4())
-    
+
     def _get_process_identifier(self) -> str:
         """
         Get an identifier for the current process.
-        
+
         Returns:
             str: An identifier for the current process.
         """
         hostname = socket.gethostname()
         pid = os.getpid()
         return f"{hostname}:{pid}"
-    
+
     def _get_current_datetime(self) -> str:
         """
         Get the current datetime in ISO format.
-        
+
         Returns:
             str: The current datetime in ISO format.
         """
         return datetime.datetime.now(datetime.timezone.utc).isoformat()
-    
+
     def create_message(self, queue: Union[str, Gist], content: Any, queue_name: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Create a new message in a queue.
-        
+
         Args:
             queue (Union[str, Gist]): Either a queue name, a Gist ID, or a Gist object.
             content (Any): The content of the message. Will be serialized to JSON.
             queue_name (Optional[str]): The name of the queue. Only used if queue is a Gist object.
-            
+
         Returns:
             Optional[Dict[str, Any]]: The created message, or None if creation fails.
         """
@@ -95,17 +95,17 @@ class MessageManager:
         else:
             # Assume it's a Gist object
             gist = queue
-        
+
         if not gist:
             print("Queue not found.")
             return None
-        
+
         # Get the queue content
         queue_content = self.queue_manager.get_queue_content(gist, queue_name)
         if queue_content is None:
             print("Failed to retrieve queue content.")
             return None
-        
+
         # Create the message
         message = {
             "id": self._generate_message_id(),
@@ -114,10 +114,10 @@ class MessageManager:
             "status_datetime": self._get_current_datetime(),
             "process": None
         }
-        
+
         # Add the message to the queue
         queue_content.append(message)
-        
+
         # Update the queue
         filename = self.queue_manager._get_queue_filename(queue_name or self.queue_manager.default_queue)
         try:
@@ -127,16 +127,16 @@ class MessageManager:
         except Exception as e:
             print(f"Error creating message: {e}")
             return None
-    
+
     def list_messages(self, queue: Union[str, Gist], status: Optional[str] = None, queue_name: Optional[str] = None) -> Optional[List[Dict[str, Any]]]:
         """
         List messages in a queue, optionally filtered by status.
-        
+
         Args:
             queue (Union[str, Gist]): Either a queue name, a Gist ID, or a Gist object.
             status (Optional[str]): Filter messages by status. If None, all messages are returned.
             queue_name (Optional[str]): The name of the queue. Only used if queue is a Gist object.
-            
+
         Returns:
             Optional[List[Dict[str, Any]]]: The list of messages, or None if retrieval fails.
         """
@@ -145,21 +145,21 @@ class MessageManager:
         if queue_content is None:
             print("Failed to retrieve queue content.")
             return None
-        
+
         # Filter by status if specified
         if status:
             return [msg for msg in queue_content if msg.get("status") == status]
-        
+
         return queue_content
-    
+
     def get_next_message(self, queue: Union[str, Gist], queue_name: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Get the next pending message from a queue and mark it as in progress.
-        
+
         Args:
             queue (Union[str, Gist]): Either a queue name, a Gist ID, or a Gist object.
             queue_name (Optional[str]): The name of the queue. Only used if queue is a Gist object.
-            
+
         Returns:
             Optional[Dict[str, Any]]: The next message, or None if no pending messages are available.
         """
@@ -176,17 +176,17 @@ class MessageManager:
         else:
             # Assume it's a Gist object
             gist = queue
-        
+
         if not gist:
             print("Queue not found.")
             return None
-        
+
         # Get the queue content
         queue_content = self.queue_manager.get_queue_content(gist, queue_name)
         if queue_content is None:
             print("Failed to retrieve queue content.")
             return None
-        
+
         # Find the first pending message
         for i, message in enumerate(queue_content):
             if message.get("status") == MessageStatus.PENDING:
@@ -194,7 +194,7 @@ class MessageManager:
                 message["status"] = MessageStatus.IN_PROGRESS
                 message["status_datetime"] = self._get_current_datetime()
                 message["process"] = self._get_process_identifier()
-                
+
                 # Update the queue
                 filename = self.queue_manager._get_queue_filename(queue_name or self.queue_manager.default_queue)
                 try:
@@ -204,22 +204,22 @@ class MessageManager:
                 except Exception as e:
                     print(f"Error updating message status: {e}")
                     return None
-        
+
         print("No pending messages found.")
         return None
-    
-    def update_message(self, queue: Union[str, Gist], message_id: str, content: Optional[Any] = None, 
+
+    def update_message(self, queue: Union[str, Gist], message_id: str, content: Optional[Any] = None,
                       status: Optional[str] = None, queue_name: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Update a message in a queue.
-        
+
         Args:
             queue (Union[str, Gist]): Either a queue name, a Gist ID, or a Gist object.
             message_id (str): The ID of the message to update.
             content (Optional[Any]): The new content of the message. If None, the content is not updated.
             status (Optional[str]): The new status of the message. If None, the status is not updated.
             queue_name (Optional[str]): The name of the queue. Only used if queue is a Gist object.
-            
+
         Returns:
             Optional[Dict[str, Any]]: The updated message, or None if update fails.
         """
@@ -236,28 +236,28 @@ class MessageManager:
         else:
             # Assume it's a Gist object
             gist = queue
-        
+
         if not gist:
             print("Queue not found.")
             return None
-        
+
         # Get the queue content
         queue_content = self.queue_manager.get_queue_content(gist, queue_name)
         if queue_content is None:
             print("Failed to retrieve queue content.")
             return None
-        
+
         # Find the message
         for i, message in enumerate(queue_content):
             if message.get("id") == message_id:
                 # Update the message
                 if content is not None:
                     message["content"] = content
-                
+
                 if status is not None:
                     message["status"] = status
                     message["status_datetime"] = self._get_current_datetime()
-                
+
                 # Update the queue
                 filename = self.queue_manager._get_queue_filename(queue_name or self.queue_manager.default_queue)
                 try:
@@ -267,18 +267,18 @@ class MessageManager:
                 except Exception as e:
                     print(f"Error updating message: {e}")
                     return None
-        
+
         print(f"Message {message_id} not found.")
         return None
-    
+
     def delete_completed_messages(self, queue: Union[str, Gist], queue_name: Optional[str] = None) -> Optional[int]:
         """
         Delete completed messages that are older than the cleanup threshold.
-        
+
         Args:
             queue (Union[str, Gist]): Either a queue name, a Gist ID, or a Gist object.
             queue_name (Optional[str]): The name of the queue. Only used if queue is a Gist object.
-            
+
         Returns:
             Optional[int]: The number of deleted messages, or None if deletion fails.
         """
@@ -295,21 +295,21 @@ class MessageManager:
         else:
             # Assume it's a Gist object
             gist = queue
-        
+
         if not gist:
             print("Queue not found.")
             return None
-        
+
         # Get the queue content
         queue_content = self.queue_manager.get_queue_content(gist, queue_name)
         if queue_content is None:
             print("Failed to retrieve queue content.")
             return None
-        
+
         # Calculate the threshold datetime
         threshold = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=self.cleanup_threshold_days)
         threshold_str = threshold.isoformat()
-        
+
         # Filter out completed messages older than the threshold
         original_count = len(queue_content)
         queue_content = [
@@ -320,7 +320,7 @@ class MessageManager:
             )
         ]
         deleted_count = original_count - len(queue_content)
-        
+
         if deleted_count > 0:
             # Update the queue
             filename = self.queue_manager._get_queue_filename(queue_name or self.queue_manager.default_queue)
@@ -331,6 +331,6 @@ class MessageManager:
             except Exception as e:
                 print(f"Error deleting messages: {e}")
                 return None
-        
+
         print("No messages to delete.")
         return 0

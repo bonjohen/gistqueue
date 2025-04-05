@@ -28,7 +28,6 @@ setup(
     url='https://github.com/example/gistqueue',
     packages=find_packages(),
     install_requires=[
-        'PyGithub>=2.0.0',
         'python-dotenv>=0.15.0',
         'requests>=2.25.0',
     ],
