@@ -340,7 +340,21 @@ class DirectGitHubClient:
             Optional[str]: The content of the file, or None if the file is not found.
         """
         if filename in gist.files:
-            return gist.files[filename].content
+            # First try to get the content from the gist object
+            content = gist.files[filename].content
+            if content is not None:
+                return content
+
+            # If that fails, try to fetch the raw content from the raw_url
+            raw_url = gist.files[filename].raw_url
+            if raw_url:
+                try:
+                    logger.debug(f"Fetching raw content from {raw_url}")
+                    response = requests.get(raw_url, headers=self.headers)
+                    response.raise_for_status()
+                    return response.text
+                except Exception as e:
+                    logger.error(f"Failed to fetch raw content: {e}")
         return None
 
     def parse_json_content(self, content: str) -> Any:
