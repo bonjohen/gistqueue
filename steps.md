@@ -34,15 +34,15 @@ To implement the message queue system using GitHub Gists, the work can be organi
 - **3.5. Delete Message** ✅
   - Develop functionality to remove messages marked as `complete` with a `status_datetime` older than one day from the queue file.
 
-**4. Concurrency and Conflict Handling**
+**4. Concurrency and Conflict Handling** ✅
 
-- **4.1. Atomic Operations Implementation**
+- **4.1. Atomic Operations Implementation** ✅
   - Ensure that operations like `Get-Next` are performed atomically by quickly retrieving, updating, and committing changes to minimize the window for conflicts.
 
-- **4.2. Conflict Detection and Resolution**
+- **4.2. Conflict Detection and Resolution** ✅
   - Implement checks to detect if a message has been modified between retrieval and update, and establish a retry mechanism if a conflict is detected.
 
-- **4.3. Process Identification**
+- **4.3. Process Identification** ✅
   - Include an identifier for the processing entity in each message to track which process is handling it, aiding in conflict resolution and auditing.
 
 **5. Garbage Collection**

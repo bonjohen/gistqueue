@@ -12,26 +12,37 @@ load_dotenv()
 
 # Default configuration values
 DEFAULT_CONFIG = {
+    # Gist and queue settings
     'GIST_DESCRIPTION_PREFIX': 'Queue:',
     'DEFAULT_QUEUE_NAME': 'default',
     'DEFAULT_FILE_EXTENSION': 'json',
+
+    # API settings
     'API_RETRY_COUNT': 3,
     'API_RETRY_DELAY': 1,  # seconds
+
+    # Cleanup settings
     'CLEANUP_THRESHOLD_DAYS': 1,  # days
+
+    # Concurrency settings
+    'CONCURRENCY_MAX_RETRIES': 3,
+    'CONCURRENCY_RETRY_DELAY_BASE': 1.0,  # seconds
+    'CONCURRENCY_RETRY_DELAY_MAX': 5.0,  # seconds
+    'CONCURRENCY_JITTER_FACTOR': 0.1,  # 10% jitter
 }
 
 def get_config() -> Dict[str, Any]:
     """
     Get the application configuration.
-    
+
     This function loads configuration values from environment variables,
     falling back to default values if not specified.
-    
+
     Returns:
         Dict[str, Any]: The application configuration.
     """
     config = DEFAULT_CONFIG.copy()
-    
+
     # Override defaults with environment variables if they exist
     for key in config:
         env_value = os.environ.get(key)
@@ -43,7 +54,7 @@ def get_config() -> Dict[str, Any]:
                 config[key] = float(env_value)
             else:
                 config[key] = env_value
-    
+
     return config
 
 # Export the configuration
